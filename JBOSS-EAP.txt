@@ -1,0 +1,268 @@
+JBOSS EAP 7.3
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+BASIC:
+
+Jar - Java Archive ----------Group of .class files (simple project)
+
+jar tf filename.jar ---------command to find the list of classes that are compressed
+
+War - Web Archive -----------Will have Web-related J2EE components like (Servlets, JSP, HTML, CSS, JS, XML)
+
+EAR - Enterprise archive ----Web related components and other non-web J2EE components 
+
+WEB SERVERS ----------used for web related projects
+
+APPLICATION SERVERS --used for web related and non-web related J2EE projects. 
+
+JBOSS Application Server (AS) has been renamed to wildfly in the EAP 7 version.
+------------------------------------------------------------------------------------------------------------------------------------------
+DIRECTORY STRUCTURE:
+
+tmp ------will store tokens or authitication
+
+Domain----only have server folder
+
+Security Realm - Management Realm and Application Realm
+ 
+Difference between Management Realm/Application Realm
+------------------------------------------------------
+-if the user is going to administer the platform or deploy some content into the server or developer --all are management Realm
+
+-if the user is going to use a client application and thats going to send a message onto the Jboss ---it is an Application Realm
+
+-Application Users will have roles ---user-to-role mappings
+ Management users will have groups ---user-to-group mappings
+-----------------------------------------------------------------------------------------------------------------------------------------------
+MODULES,EXTENSIONS,SUBSYSTEMS AND PROFILE
+
+MODULES-----it provide a code(java classes) to be used by EAP
+EXTENSIONS--Reference of a module in .xml configuration file
+SUBSYSTEMS--Configurable element
+PROFILE ----a group of subsystems configurations
+-------------------------------------------------------------------------------------------------------------------------------------------------
+STANDALONE MODE
+
+-> If there is only one JBOSS EAP installed in a host, then that server will be run in the standalone mode
+
+-> Standalone mode can be run as 4 different profile options:
+  ->standalone-full
+  ->standalone-full-ha(high availability)----------it has a full access
+  ->standalone-ha
+  ->standalone-load-balancer
+standalone----it contain all information about the server,networking,deployment,socket binding and other configuration
+              it does not provide subsystems for messaging or high availability(HA)
+
+TO START STANDALONE---standalone.bat
+
+standalone.bat -c "standalone-full.xml" (-c --configuration,standalone-full-----profile)
+-------------------------------------------------------------------------------------------------------------------------------------------------
+DOMAIN MODE IN SINGLE MACHINE
+
+if you have more than one server instances ,you can go for domain mode
+
+DOMAIN CONTROLLER -> it is responsible for managing all the hosts controllers
+
+HOST CONTROLLER -> it is responsible for server instances that are running inside host control
+
+SERVER GROUPS -> Each of the server belong to the server groups
+
+IN SERVER_GROUP------same machine---- assigns different jvm to each of the server 
+
+domain and host controller and server group runs on the same machine 
+
+TYPES OF DOMAIN MODE:
+
+=>Domain Configuration in same machine
+
+=>Domain Configuration in two machine
+one machine is a domain controller (using host-master.xml)
+other machine is a host (using host-slave.xml)
+
+STEPS FOR TWO MACHINE:
+
+-> start domain controller using the host-master.xml
+   (domain.bat --host-config=host-master.xml)
+
+-> create a management user and copy the secret value
+
+-> place the secret value in the host-slave.xml
+
+-> add ip address of the domain controller in the host-slave.xml
+
+-> start the JBOSS EAP in the slave machine using host-slave.xml
+   (domain.bat --host-config=host-slave.xml)
+
+
+DEMO:
+
+->host-master run in 192.168.169.137 in the port 9991 
+->host slave is run in local machine
+
+add-user.bat--------add user-in the remoting give (yes) it will generate secret value 
+(copy the secret value and paste in host-slave.xml)
+<server-identities>
+  <secret value="copy the secret value"/>
+</server-identities>
+<static-discovery ...host="paste ip"
+
+
+
+step 1=>run domain.bat
+step 2=> another tab run domain.bat --host-config=host-slave.xml
+ 
+
+HEAP MEMORY:
+
+Heap Memory can be increased in a respective conf file. To increase memory for standalone;
+
+• Go to bin folder
+
+• Edit the standalone.conf file and look for “JAVA_OPTS=” argument line
+
+• The default configuration will have minimum values. You can increase to the desired value.
+
+Xms – specify the minimum heap size
+
+Xmx – specify the maximum heap size
+
+In a similar way, you can adjust the memory for a domain in domain.conf file
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+MANAGEMENT CONSOLE:
+
+-> GUI
+
+RUNTIME will have server status in this we can reload and restart
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+LOG LEVELS
+
+TRACE -----detailed information about the running state  --------------------any issues
+DEBUG -----indicates the progress individual requests or activities ---------any issues
+INFO ------indicates overall progress of an application (startup,shutdown and other major lifecycle events)  ---war deploy
+WARN ------ indicates a situation that is not in error 
+ERROR ----indicates an error
+FATAL ---- indicate that cause critical service failure and app shutdown and possibly cause jboss EAP to shutdown ---app server got crashed
+
+standalone ----log
+
+LOGGING SUBSYSTEM:
+
+root logger
+log handler --level of locking(output redirect to console)
+log formatter ---output format
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+COMMANDS:
+
+to launch CLI ---bin->jboss-cli
+->connect
+->deploy "path file with filename.war"
+->undeploy filename.war
+->deployment-info -------what are the deploy will show
+-> :take-snapshot() ----configuration shapshot(backup)
+-> :list-snapshots() ---it shows the name
+-> :shutdown(restart=true)
+-> deploy "fullnamepath.war" --server-groups=main-server-group
+-> deployment-info --server-group=main-server-group
+-> /host=master/server-config=server-one:stop
+-> deploy TestDate.ear --disabled -----upload an application into the data repository without deploying it
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DATABASE
+
+config->subsystems->datasources->
+
+--------------------------------------------------------------------------
+JMS
+
+runtime->hosts name->messaging->click server
+
+
+add messaging->cli command to add
+1->jms-queue add --queue-address=name --entries=queue/Test4,java:jboss/exported/jms/queue/test4
+2-> add user(application mange)
+
+
+
+
+D:\EAP-7.3.0\bin\standalone.bat -c standalone-ha.xml -Djboss.socket.binding.port-offset=100
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CLUSTERING:
+
+Clustering--grouping multiple resources,such as servers etc
+
+Two main types of clustering are load balancing (LB) and High availability (HA).
+->LB cluster---first request go to node1 and second request go to node2 and third request go to node3---all resources run at same time.
+-> HA ----first resources will take all the request, whereas second will not take until first node fails. (1st node goes down 2nd node will goes up)
+ 
+
+->undertows system is simply the web page
+->modcluster is the module which enables load balancing in the Jboss web container
+
+JBOSS profiles:
+->standalone-ha.xml
+->standalone-full-ha.xml
+
+steps performed in demo
+
+->install 3 instances of Jboss EAP
+->Name first one as LoadbalancerEAP (any name can be given)
+->Name second one as Node1EAP 
+->Name third one as Node1EAP
+->configure loadbalancerEAP instance
+->configure Node1EAP and node2EAP
+->Deploy an application called as sample.war in node1 and node2 for testing. 
+
+DEMO JBOSSEAP
+
+Launch JbossEAP installer-> save in d drive as LoadbalancerEAP->install
+Launch JbossEAP installer-> save in d drive as NODE1EAP->install
+Launch JbossEAP installer-> save in d drive as NODE2EAP->install
+
+CONFIG OF LOADBALANCE:
+
+=>Go to LoadbalanceEAP->standalone->config->standalone-ha->
+ctrl+f (to find) UNDERTOW---in the host tag 
+<filter-ref name="modclusterloadbal"/>
+
+=>under the </handlers> ----------
+<filters>
+<mod-cluster name="modclusterloadbal" security-key="mysecuritykey" management-socket-binding="http" advertise-socket-binding="modcluster"/>
+</filters>
+
+=>run the instance----go to the path ----standalone.bat -c standalone-ha.xml
+
+CONFIG OF NODE1 and NODE2:
+
+=>GO to node1/standalone/config/standalone-ha.xml
+
+=>CTRL+f----search (undertow)
+
+<subsystem xmlns="urn:jboss:domain:undertow:10.0" statistics-enabled="true" default-security-domain="other" instance-id="node1" default-servlet-container="default" default-virtual-host="default-host" default-server="default-server">
+
+node1=> ctrl+f search(modcluster)
+under this paste the proxy name content <subsystem xmlns="urn:jboss:domain:modcluster:5.0">
+<proxy name="default" listener="ajp" balancer="mycluster" advertise-socket="modcluster" advertise-security-key="mysecuritykey" advertise="true">
+
+node2=>ctrl+f search(modcluster)
+under this paste the proxy name content <subsystem xmlns="urn:jboss:domain:modcluster:5.0">
+<proxy name="default" listener="ajp" balancer="mycluster2" advertise-socket="modcluster" advertise-security-key="mysecuritykey" advertise="true"> 
+
+
+=>start node1 instance ------standalone.bat -c standalone-ha.xml -Djboss.socket.binding.port-offset=100
+
+=>start node2 instance------standalone.bat -c standalone-ha.xml -Djboss.socket.binding.port-offset=200
+
+copy http lister port in server and apply in browser
+
+-------------------------------------------------------------
+DEPLOY WAR FILE
+
+->deploy war file in node 1 and node 2
+->load balancer server see the changes and launch the website using loadbalance port
+
+CHANGE THE ROOT LOGGER
+
+->config->subsystem->logging->config->view->edit INFO to DEBUG
+
+->check in node1 or node2 ---keyword (created session)
+
+
